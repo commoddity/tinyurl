@@ -1,0 +1,22 @@
+{
+  "name": "tinyurl",
+  "version": "1.0.0",
+  "description": "Lighthouse Labs TinyURL Project Folder",
+  "main": "app.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Commoddity/tinyurl.git"
+  },
+  "keywords": [
+    "tinyurl"
+  ],
+  "author": "Pascal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Commoddity/tinyurl/issues"
+  },
+  "homepage": "https://github.com/Commoddity/tinyurl#readme"
+}
