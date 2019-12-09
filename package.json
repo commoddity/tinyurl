@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/Commoddity/tinyurl#readme",
   "dependencies": {
-    "express": "^4.17.1",
-    "ejs": "^1.0.0"
+    "ejs": "^1.0.0",
+    "express": "^4.17.1"
   }
 }
