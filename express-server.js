@@ -54,11 +54,15 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  console.log(req.params.shortURL)
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
-})
+});
+
+app.post("/urls/:shortURL", (req, res) => {
+  urlDatabase[req.params.shortURL] = req.body.updateURL;
+  res.redirect("/urls");
+});
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`TinyApp Server running!\nExample app listening on port ${PORT}!`);
 });
