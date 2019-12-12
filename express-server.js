@@ -71,7 +71,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const userID = req.session.userID;
   const userURLs = urlsForUser(userID);
-  let templateVars = {
+    let templateVars = {
     user: usersDatabase[userID],
     urls: userURLs
   };
