@@ -6,8 +6,9 @@ const bcrypt = require('bcrypt');
 const PORT = 8080;
 const app = express();
 
-app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
+
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
   keys: ["the", "legend", "of", "zelda", "changed", "my", "life"],
@@ -15,7 +16,7 @@ app.use(cookieSession({
 }));
 
 // RANDOM STRING GENERATOR FUNCTIONS
-const generateRandomString = () => {
+const generateShortURL = () => {
   const randomString = Math.random().toString(36).slice(-6);
   return randomString;
 };
@@ -56,7 +57,7 @@ const urlsForUser = (id) => {
 // DATABASE OBJECTS
 const urlDatabase = {};
 
-const users = {};
+const usersDatabase = {};
 
 // GET REQUESTS
 app.get("/", (req, res) => {
@@ -71,7 +72,7 @@ app.get("/urls", (req, res) => {
   const userID = req.session.userID;
   const userURLs = urlsForUser(userID);
   let templateVars = {
-    user: users[userID],
+    user: usersDatabase[userID],
     urls: userURLs
   };
   res.render("urls-index", templateVars);
@@ -81,7 +82,7 @@ app.get("/urls/new", (req,res) => {
   if (req.session.userID) {
     const userID = req.session.userID;
     let templateVars = {
-      user: users[userID],
+      user: usersDatabase[userID],
       urls: urlDatabase
     };
     res.render("urls-new", templateVars);
@@ -93,7 +94,7 @@ app.get("/urls/new", (req,res) => {
 app.get("/urls/register", (req, res) => {
   const userID = req.session.userID;
   let templateVars = {
-    user: users[userID],
+    user: usersDatabase[userID],
     urls: urlDatabase
   };
   res.render("urls-register", templateVars);
@@ -102,7 +103,7 @@ app.get("/urls/register", (req, res) => {
 app.get("/urls/login", (req, res) => {
   const userID = req.session.userID;
   let templateVars = {
-    user: users[userID],
+    user: usersDatabase[userID],
     urls: urlDatabase
   };
   res.render("urls-login", templateVars);
@@ -112,7 +113,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
   const userURLs = urlsForUser(userID);
   let templateVars = {
-    user: users[userID],
+    user: usersDatabase[userID],
     urls: urlDatabase,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL
@@ -131,11 +132,54 @@ app.get("/u/:shortURL", (req, res) => {
 
 // POST REQUESTS
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
+  const shortURL = generateShortURL();
   urlDatabase[shortURL] = {};
   urlDatabase[shortURL].longURL = req.body.longURL;
   urlDatabase[shortURL].userID = req.session.userID;
   res.redirect(`./urls/${shortURL}`);
+});
+
+app.post("/register", (req, res) => {
+  const userID = generateRandomID();
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  usersDatabase[userID] = {};
+  usersDatabase[userID].id = userID;
+  if (req.body.email.length === 0 || req.body.password.length === 0) {
+    res.status(400).send('Must enter value into field.');
+  } else if (emailLookupHelper(req.body.email, usersDatabase)) {
+    res.status(400).send('User account with that email already exists.');
+  } else {
+    usersDatabase[userID].email = req.body.email;
+    usersDatabase[userID].password = hashedPassword;
+    req.session.userID = userID;
+    res.redirect("/urls");
+  }
+});
+
+app.post("/login", (req, res) => {
+  if (emailLookupHelper(req.body.email, usersDatabase)) {
+    const requestPassword = req.body.password;
+    let userID;
+    if (requestPassword) {
+      userID = loginHelper(req.body.email, requestPassword, usersDatabase);
+    } else {
+      res.status(403).send('Incorrect password for that user account.');
+    }
+    if (userID) {
+      req.session.userID = userID;
+      res.redirect("/urls");
+    } else {
+      res.status(403).send('Incorrect password for that user account.');
+    }
+  } else {
+    res.status(403).send('No user account with that email address.');
+  }
+});
+
+app.post("/logout", (req,res) => {
+  req.session = null;
+  res.redirect("/urls");
 });
 
 app.post("/urls/:shortURL", (req, res) => {
@@ -158,49 +202,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   } else {
     res.status(403).send('You do not have access to this TinyURL.');
   }
-});
-
-app.post("/register", (req, res) => {
-  const userID = generateRandomID();
-  const password = req.body.password;
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  users[userID] = {};
-  users[userID].id = userID;
-  if (req.body.email.length === 0 || req.body.password.length === 0) {
-    res.status(400).send('Must enter value into field.');
-  } else if (emailLookupHelper(req.body.email, users)) {
-    res.status(400).send('User account with that email already exists.');
-  } else {
-    users[userID].email = req.body.email;
-    users[userID].password = hashedPassword;
-    req.session.userID = userID;
-    res.redirect("/urls");
-  }
-});
-
-app.post("/login", (req, res) => {
-  if (emailLookupHelper(req.body.email, users)) {
-    const requestPassword = req.body.password;
-    let userID;
-    if (requestPassword) {
-      userID = loginHelper(req.body.email, requestPassword, users);
-    } else {
-      res.status(403).send('Incorrect password for that user account.');
-    }
-    if (userID) {
-      req.session.userID = userID;
-      res.redirect("/urls");
-    } else {
-      res.status(403).send('Incorrect password for that user account.');
-    }
-  } else {
-    res.status(403).send('No user account with that email address.');
-  }
-});
-
-app.post("/logout", (req,res) => {
-  req.session = null;
-  res.redirect("/urls");
 });
 
 // LISTENERS
