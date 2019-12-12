@@ -3,8 +3,11 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 
+const { emailLookupHelper, loginHelper, urlsForUser } = require('./helpers.js');
+
 const PORT = 8080;
 const app = express();
+
 
 app.set("view engine", "ejs");
 
@@ -26,34 +29,6 @@ const generateRandomID = () => {
   return randomID;
 };
 
-// HELPER FUNCTIONS
-const emailLookupHelper = (email, object) => {
-  for (const id in object) {
-    if (object[id].email === email) {
-      return true;
-    }
-  }
-};
-
-const loginHelper = (email, password, object) => {
-  for (const id in object) {
-    const passwordCorrect = bcrypt.compareSync(password, object[id].password);
-    if (object[id].email === email && passwordCorrect === true) {
-      return id;
-    }
-  }
-};
-
-const urlsForUser = (id) => {
-  const filteredDatabase = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      filteredDatabase[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return filteredDatabase;
-};
-
 // DATABASE OBJECTS
 const urlDatabase = {};
 
@@ -70,8 +45,8 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.userID;
-  const userURLs = urlsForUser(userID);
-    let templateVars = {
+  const userURLs = urlsForUser(userID, urlDatabase);
+  let templateVars = {
     user: usersDatabase[userID],
     urls: userURLs
   };
@@ -111,7 +86,7 @@ app.get("/urls/login", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
-  const userURLs = urlsForUser(userID);
+  const userURLs = urlsForUser(userID, urlDatabase);
   let templateVars = {
     user: usersDatabase[userID],
     urls: urlDatabase,
@@ -121,6 +96,7 @@ app.get("/urls/:shortURL", (req, res) => {
   if (userURLs[req.params.shortURL]) {
     res.render("urls-show", templateVars);
   } else {
+    console.log("TEST!");
     res.status(403).send('You do not have access to this TinyURL.');
   }
 });
@@ -184,7 +160,7 @@ app.post("/logout", (req,res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
-  const userURLs = urlsForUser(userID);
+  const userURLs = urlsForUser(userID, urlDatabase);
   if (userURLs[req.params.shortURL]) {
     urlDatabase[req.params.shortURL].longURL = req.body.updateURL;
     res.redirect("/urls");
@@ -195,7 +171,9 @@ app.post("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session.userID;
-  const userURLs = urlsForUser(userID);
+  const userURLs = urlsForUser(userID, urlDatabase);
+  console.log(userURLs);
+  console.log(urlDatabase);
   if (userURLs[req.params.shortURL]) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
