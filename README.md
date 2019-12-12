@@ -9,7 +9,7 @@ Shortened URLs are associated to specific user accounts. All passwords are secur
 !["TinyApp individual URL Page"](https://github.com/Commoddity/tinyurl/blob/master/docs/tinyurl2.png)
 !["TinyApp Create New URL Page"](https://github.com/Commoddity/tinyurl/blob/master/docs/tinyurl3.png)
 
-_Screenshots were taken in [Google Chrome] (https://www.google.com/chrome/), uisng the [Dark Reader] (https://chrome.google.com/webstore/detail/dark-reader/eimadpbcbfnmbkopoojfekhnkhdbieeh?hl=en) add-on._
+_Screenshots were taken in [Google Chrome](https://www.google.com/chrome/), uing the [Dark Reader](https://chrome.google.com/webstore/detail/dark-reader/eimadpbcbfnmbkopoojfekhnkhdbieeh?hl=en) add-on._
 
 ## Dependencies
 
