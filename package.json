@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/Commoddity/tinyurl#readme",
   "dependencies": {
+    "bcrypt": "2.0.0",
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.4",
     "ejs": "^3.0.1",

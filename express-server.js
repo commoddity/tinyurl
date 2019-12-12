@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -30,10 +31,9 @@ const emailLookupHelper = (email, object) => {
 
 const loginHelper = (email, password, object) => {
   for (const id in object) {
-    if (object[id].email === email && object[id].password === password) {
+    const passwordCorrect = bcrypt.compareSync(password, object[id].password);
+    if (object[id].email === email && passwordCorrect === true) {
       return id;
-    } else {
-      return undefined;
     }
   }
 };
@@ -174,6 +174,8 @@ app.post("/login", (req, res) => {
 
 app.post("/register", (req, res) => {
   const userID = generateRandomID();
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   users[userID] = {};
   users[userID].id = userID;
   if (req.body.email.length === 0 || req.body.password.length === 0) {
@@ -182,7 +184,7 @@ app.post("/register", (req, res) => {
     res.status(400).send('User account with that email already exists.');
   } else {
     users[userID].email = req.body.email;
-    users[userID].password = req.body.password;
+    users[userID].password = hashedPassword;
     res.cookie("user_ID", userID);
     res.redirect("/urls");
   }
