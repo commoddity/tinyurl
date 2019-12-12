@@ -28,4 +28,15 @@ const urlsForUser = (id, database) => {
   return filteredDatabase;
 };
 
-module.exports = { emailLookupHelper, loginHelper, urlsForUser };
+// RANDOM STRING GENERATOR FUNCTIONS
+const generateShortURL = () => {
+  const randomString = Math.random().toString(36).slice(-6);
+  return randomString;
+};
+
+const generateRandomID = () => {
+  const randomID = Math.random().toString(36).slice(-8);
+  return randomID;
+};
+
+module.exports = { emailLookupHelper, loginHelper, urlsForUser, generateShortURL, generateRandomID };

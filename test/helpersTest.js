@@ -1,8 +1,9 @@
 const { assert } = require('chai');
 const bcrypt = require('bcrypt');
 
-const { emailLookupHelper, loginHelper, urlsForUser } = require('../helpers.js');
+const { emailLookupHelper, loginHelper, urlsForUser, generateShortURL, generateRandomID } = require('../helpers.js');
 
+// TEST OBJECTS
 const testUsers = {
   "userRandomID": {
     id: "userRandomID",
@@ -17,7 +18,7 @@ const testUsers = {
   "user3RandomID": {
     id: "user3RandomID",
     email: "user3@example.com",
-    password: bcrypt.hashSync("dingleberry-pie", 10)
+    password: bcrypt.hashSync("trogdor-the-burninator", 10)
   }
 };
 
@@ -32,6 +33,7 @@ const testURLs = {
     }
 };
 
+//HELPER FUNCTION TESTS
 describe('emailLookupHelper', () => {
   it('should return a user with valid email', () => {
     const user = emailLookupHelper("user@example.com", testUsers);
@@ -48,8 +50,14 @@ describe('emailLookupHelper', () => {
 
 describe('loginHelper', () => {
   it('should return a user with valid email and password', () => {
-    const user = loginHelper("user3@example.com", "dingleberry-pie", testUsers);
+    const user = loginHelper("user3@example.com", "trogdor-the-burninator", testUsers);
     const expectedOutput = "user3RandomID";
+    assert.equal(expectedOutput, user);
+  });
+
+  it('should return undefined if passed incorrect password', () => {
+    const user = loginHelper("user4@example.com", "trogdor-the-slurminator", testUsers);
+    const expectedOutput = undefined;
     assert.equal(expectedOutput, user);
   });
 
@@ -71,5 +79,22 @@ describe('urlsForUser', () => {
     const filteredDatabase = urlsForUser('hnehw6w', testURLs);
     const expectedOutput = {};
     assert.deepEqual(expectedOutput, filteredDatabase);
+  });
+});
+
+// RANDOM STRING GENERATOR TESTS
+describe('generateShortURL', () => {
+  it('should return a random string 6 characters long', () => {
+    const shortURL = generateShortURL();
+    const expectedLength = 6;
+    assert.equal(shortURL.length, expectedLength);
+  });
+});
+
+describe('generateRandomID', () => {
+  it('should return a random string 8 characters long', () => {
+    const randomID = generateRandomID();
+    const expectedLength = 8;
+    assert.equal(randomID.length, expectedLength);
   });
 });
