@@ -8,6 +8,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
+// RANDOM STRING GENERATOR FUNCTIONS
 const generateRandomString = () => {
   const randomString = Math.random().toString(36).slice(-6);
   return randomString;
@@ -18,13 +19,7 @@ const generateRandomID = () => {
   return randomID;
 };
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
-
-const users = {};
-
+// HELPER FUNCTIONS
 const emailLookupHelper = (email, object) => {
   for (const id in object) {
     if (object[id].email === email) {
@@ -43,6 +38,25 @@ const loginHelper = (email, password, object) => {
   }
 };
 
+const urlsForUser = (id) => {
+  const filteredDatabase = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      filteredDatabase[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return filteredDatabase;
+};
+
+// DATABASE OBJECTS
+const urlDatabase = {
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "f6ts3hw2"},
+  "9sm5xK": { longURL: "http://www.google.com", userID: "kit5f4sq"}
+};
+
+const users = {};
+
+// GET REQUESTS
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -52,22 +66,26 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  console.log(users);
   const userID = req.cookies.user_ID;
+  const userURLs = urlsForUser(userID);
   let templateVars = {
     user: users[userID],
-    urls: urlDatabase
+    urls: userURLs
   };
   res.render("urls-index", templateVars);
 });
 
 app.get("/urls/new", (req,res) => {
-  const userID = req.cookies.user_ID;
-  let templateVars = {
-    user: users[userID],
-    urls: urlDatabase
-  };
-  res.render("urls-new", templateVars);
+  if (req.cookies.user_ID) {
+    const userID = req.cookies.user_ID;
+    let templateVars = {
+      user: users[userID],
+      urls: urlDatabase
+    };
+    res.render("urls-new", templateVars);
+  } else {
+    res.redirect("/urls/login");
+  }
 });
 
 app.get("/urls/register", (req, res) => {
@@ -90,34 +108,54 @@ app.get("/urls/login", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.cookies.user_ID;
+  const userURLs = urlsForUser(userID);
   let templateVars = {
     user: users[userID],
     urls: urlDatabase,
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL]
+    longURL: urlDatabase[req.params.shortURL].longURL
   };
-  res.render("urls-show", templateVars);
+  if (userURLs[req.params.shortURL]) {
+    res.render("urls-show", templateVars);
+  } else {
+    res.status(403).send('You do not have access to this TinyURL.');
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
+// POST REQUESTS
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = {};
+  urlDatabase[shortURL].longURL = req.body.longURL;
+  urlDatabase[shortURL].userID = req.cookies.user_ID;
   res.redirect(`./urls/${shortURL}`);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  const userID = req.cookies.user_ID;
+  const userURLs = urlsForUser(userID);
+  if (userURLs[req.params.shortURL]) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    res.status(403).send('You do not have access to this TinyURL.');
+  }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.updateURL;
-  res.redirect("/urls");
+  const userID = req.cookies.user_ID;
+  const userURLs = urlsForUser(userID);
+  if (userURLs[req.params.shortURL]) {
+    urlDatabase[req.params.shortURL].longURL = req.body.updateURL;
+    res.redirect("/urls");
+  } else {
+    res.status(403).send('You do not have access to this TinyURL.');
+  }
 });
 
 app.post("/login", (req, res) => {
@@ -155,6 +193,7 @@ app.post("/logout", (req,res) => {
   res.redirect("/urls");
 });
 
+// LISTENERS
 app.listen(PORT, () => {
   console.log(`TinyApp Server running!\nTinyApp listening on port ${PORT}!`);
 });
