@@ -63,7 +63,7 @@ app.get("/urls/register", (req, res) => {
     user: usersDatabase[userID],
     urls: urlDatabase
   };
-  if (userID) {
+  if (req.session.userID) {
     res.redirect("/urls");
   } else {
     res.render("urls-register", templateVars);
@@ -76,7 +76,7 @@ app.get("/urls/login", (req, res) => {
     user: usersDatabase[userID],
     urls: urlDatabase
   };
-  if (userID) {
+  if (req.session.userID) {
     res.redirect("/urls");
   } else {
     res.render("urls-login", templateVars);
