@@ -1,4 +1,5 @@
 const express = require("express");
+const methodOverride = require('method-override');
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
@@ -10,6 +11,8 @@ const app = express();
 
 app.set("view engine", "ejs");
 
+// app.use(methodOverride('X-HTTP-Method-Override'));
+app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
@@ -23,11 +26,7 @@ const usersDatabase = {};
 
 // GET REQUESTS
 app.get("/", (req, res) => {
-  if (req.session.userID) {
-    res.redirect("/urls");
-  } else {
-    res.redirect("urls/login");
-  }
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -45,12 +44,12 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req,res) => {
+  const userID = req.session.userID;
+  let templateVars = {
+    user: usersDatabase[userID],
+    urls: urlDatabase
+  };
   if (req.session.userID) {
-    const userID = req.session.userID;
-    let templateVars = {
-      user: usersDatabase[userID],
-      urls: urlDatabase
-    };
     res.render("urls-new", templateVars);
   } else {
     res.redirect("/urls/login");
@@ -163,7 +162,7 @@ app.post("/logout", (req,res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:shortURL", (req, res) => {
+app.put("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
   const userURLs = urlsForUser(userID, urlDatabase);
   if (userURLs[req.params.shortURL]) {
@@ -174,7 +173,7 @@ app.post("/urls/:shortURL", (req, res) => {
   }
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
   const userURLs = urlsForUser(userID, urlDatabase);
   if (userURLs[req.params.shortURL]) {
