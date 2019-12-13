@@ -20,6 +20,7 @@ _(Screenshots were taken in [Google Chrome](https://www.google.com/chrome/) with
 - body-parser
 - cookie-session
 - method-override
+- moment
 
 ## Getting Started
 

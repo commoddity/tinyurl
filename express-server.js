@@ -24,7 +24,6 @@ app.use(cookieSession({
 // DATABASE OBJECTS
 const urlDatabase = {};
 const usersDatabase = {};
-const uniqueVisitors = {};
 
 // GET REQUESTS
 app.get("/", (req, res) => {
@@ -85,18 +84,9 @@ app.get("/urls/login", (req, res) => {
   }
 });
 
-// MOVE THIS ANALYTICS LOGIC TO PATH BELOW THIS ONE
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
   const userURLs = urlsForUser(userID, urlDatabase);
-  let visitorID = generateRandomID();
-  const date = generateTimestamp();
-  let uniqueVisits = 0;
-  if (!req.cookies.visitorID) {
-    res.cookie('visitorID', visitorID);
-  } else {
-    visitorID = req.cookies.visitorID;
-  }
   if (!urlDatabase[req.params.shortURL]) {
     res.status(404).send('This TinyURL does not exist');
   }
@@ -107,25 +97,35 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL: urlDatabase[req.params.shortURL].longURL
   };
   if (userURLs[req.params.shortURL]) {
-    urlDatabase[req.params.shortURL].pageViews += 1;
-    if (req.cookies.visitorID) {
-      urlDatabase[req.params.shortURL].uniquePageViews[visitorID] = date;
-      uniqueVisits += (Object.keys(urlDatabase[req.params.shortURL].uniquePageViews)).length;
-    }
     res.render("urls-show", templateVars);
-    console.log(urlDatabase);
-    console.log(uniqueVisits);
   } else {
     res.status(403).send('You do not have access to this TinyURL.');
   }
 });
 
-
-// MOVE ANALYTICS LOGIC TO THIS PATH
+// WORKING ON THIS PATH --- STILL FINE TUNING CREATING TIMESTAMPS FOR EACH USER
+// Got it working but the only issue is that logging in doesn't seem to update the cookie, while logging out does. Very close to solved!
 app.get("/u/:shortURL", (req, res) => {
+  let visitorID = generateRandomID();
+  const date = generateTimestamp();
+  if (!req.cookies.visitorID) {
+    res.cookie('visitorID', visitorID);
+    console.log('cookie doesn\'t exist');
+  } else {
+    visitorID = req.cookies.visitorID;
+    console.log('cookie does exist')
+  }
   if (!urlDatabase[req.params.shortURL]) {
     res.status(404).send('This TinyURL does not exist');
   } else {
+    urlDatabase[req.params.shortURL].pageViews += 1;
+    if (!(urlDatabase[req.params.shortURL].visitors.includes(visitorID))) {
+      urlDatabase[req.params.shortURL].uniquePageViews += 1;
+    }
+    urlDatabase[req.params.shortURL].timestamps.push(date);
+    urlDatabase[req.params.shortURL].visitors.push(visitorID);
+    console.log(urlDatabase);
+    console.log(req.cookies);
     const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
   }
@@ -138,7 +138,9 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL].longURL = req.body.longURL;
   urlDatabase[shortURL].userID = req.session.userID;
   urlDatabase[shortURL].pageViews = 0;
-  urlDatabase[shortURL].uniquePageViews = {};
+  urlDatabase[shortURL].uniquePageViews = 0;
+  urlDatabase[shortURL].timestamps = [];
+  urlDatabase[shortURL].visitors = [];
   console.log(urlDatabase[shortURL]);
   res.redirect(`./urls/${shortURL}`);
 });
@@ -182,6 +184,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req,res) => {
+  res.clearCookie('visitorID');
   req.session = null;
   res.redirect("/urls");
 });
