@@ -7,6 +7,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 - All passwords are securely hashed and user cookies are encrypted.
 - Include analytics features to track page views, unique page views and timestampes of each visit.
 - Utilizes the moment.js module to parse dates.
+- Includes automated unit tests for every helper function.
 
 ## Final Product
 
@@ -23,6 +24,7 @@ _(Screenshots were taken in [Google Chrome](https://www.google.com/chrome/) with
 - EJS
 - bcrypt
 - body-parser
+- cookie-parser
 - cookie-session
 - method-override
 - moment

@@ -40,8 +40,7 @@ const generateRandomID = () => {
   return randomID;
 };
 
-
-//WRITE TEST FOR THIS FUNCTION
+// DATE STRING GENERATOR AND PARSER
 const generateTimestamp = () => {
   const date = moment().utcOffset('-0800').format('MMMM Do YYYY, h:mm:ss a');
   return date;
