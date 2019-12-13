@@ -1,19 +1,20 @@
 const express = require("express");
 const methodOverride = require('method-override');
 const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 
-const { emailLookupHelper, loginHelper, urlsForUser, generateShortURL, generateRandomID } = require('./helpers.js');
+const { emailLookupHelper, loginHelper, urlsForUser, generateShortURL, generateRandomID, generateTimestamp } = require('./helpers.js');
 
 const PORT = 8080;
 const app = express();
 
 app.set("view engine", "ejs");
 
-// app.use(methodOverride('X-HTTP-Method-Override'));
 app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ["the", "legend", "of", "zelda", "changed", "my", "life"],
@@ -23,6 +24,7 @@ app.use(cookieSession({
 // DATABASE OBJECTS
 const urlDatabase = {};
 const usersDatabase = {};
+const uniqueVisitors = {};
 
 // GET REQUESTS
 app.get("/", (req, res) => {
@@ -62,12 +64,13 @@ app.get("/urls/register", (req, res) => {
     user: usersDatabase[userID],
     urls: urlDatabase
   };
-  if (req.session.userID) {
+  if (req.session.userID in usersDatabase) {
     res.redirect("/urls");
   } else {
     res.render("urls-register", templateVars);
   }
 });
+
 
 app.get("/urls/login", (req, res) => {
   const userID = req.session.userID;
@@ -75,16 +78,25 @@ app.get("/urls/login", (req, res) => {
     user: usersDatabase[userID],
     urls: urlDatabase
   };
-  if (req.session.userID) {
+  if (req.session.userID in usersDatabase) {
     res.redirect("/urls");
   } else {
     res.render("urls-login", templateVars);
   }
 });
 
+// MOVE THIS ANALYTICS LOGIC TO PATH BELOW THIS ONE
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
   const userURLs = urlsForUser(userID, urlDatabase);
+  let visitorID = generateRandomID();
+  const date = generateTimestamp();
+  let uniqueVisits = 0;
+  if (!req.cookies.visitorID) {
+    res.cookie('visitorID', visitorID);
+  } else {
+    visitorID = req.cookies.visitorID;
+  }
   if (!urlDatabase[req.params.shortURL]) {
     res.status(404).send('This TinyURL does not exist');
   }
@@ -95,12 +107,21 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL: urlDatabase[req.params.shortURL].longURL
   };
   if (userURLs[req.params.shortURL]) {
+    urlDatabase[req.params.shortURL].pageViews += 1;
+    if (req.cookies.visitorID) {
+      urlDatabase[req.params.shortURL].uniquePageViews[visitorID] = date;
+      uniqueVisits += (Object.keys(urlDatabase[req.params.shortURL].uniquePageViews)).length;
+    }
     res.render("urls-show", templateVars);
+    console.log(urlDatabase);
+    console.log(uniqueVisits);
   } else {
     res.status(403).send('You do not have access to this TinyURL.');
   }
 });
 
+
+// MOVE ANALYTICS LOGIC TO THIS PATH
 app.get("/u/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]) {
     res.status(404).send('This TinyURL does not exist');
@@ -116,6 +137,9 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = {};
   urlDatabase[shortURL].longURL = req.body.longURL;
   urlDatabase[shortURL].userID = req.session.userID;
+  urlDatabase[shortURL].pageViews = 0;
+  urlDatabase[shortURL].uniquePageViews = {};
+  console.log(urlDatabase[shortURL]);
   res.redirect(`./urls/${shortURL}`);
 });
 

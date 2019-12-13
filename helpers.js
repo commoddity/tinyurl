@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const moment = require('moment');
 
 // HELPER FUNCTIONS
 const emailLookupHelper = (email, database) => {
@@ -39,4 +40,11 @@ const generateRandomID = () => {
   return randomID;
 };
 
-module.exports = { emailLookupHelper, loginHelper, urlsForUser, generateShortURL, generateRandomID };
+
+//WRITE TEST FOR THIS FUNCTION
+const generateTimestamp = () => {
+  const date = moment().utcOffset('-0800').format('MMMM Do YYYY, h:mm:ss a');
+  return date;
+};
+
+module.exports = { emailLookupHelper, loginHelper, urlsForUser, generateShortURL, generateRandomID, generateTimestamp };
