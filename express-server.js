@@ -94,7 +94,11 @@ app.get("/urls/:shortURL", (req, res) => {
     user: usersDatabase[userID],
     urls: urlDatabase,
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    pageViews: urlDatabase[req.params.shortURL].pageViews,
+    uniquePageViews: urlDatabase[req.params.shortURL].uniquePageViews,
+    timestamps: urlDatabase[req.params.shortURL].timestamps,
+    visitors: urlDatabase[req.params.shortURL].visitors
   };
   if (userURLs[req.params.shortURL]) {
     res.render("urls-show", templateVars);
@@ -103,29 +107,30 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 });
 
-// WORKING ON THIS PATH --- STILL FINE TUNING CREATING TIMESTAMPS FOR EACH USER
-// Got it working but the only issue is that logging in doesn't seem to update the cookie, while logging out does. Very close to solved!
 app.get("/u/:shortURL", (req, res) => {
   let visitorID = generateRandomID();
   const date = generateTimestamp();
   if (!req.cookies.visitorID) {
     res.cookie('visitorID', visitorID);
-    console.log('cookie doesn\'t exist');
   } else {
     visitorID = req.cookies.visitorID;
-    console.log('cookie does exist')
   }
   if (!urlDatabase[req.params.shortURL]) {
     res.status(404).send('This TinyURL does not exist');
   } else {
     urlDatabase[req.params.shortURL].pageViews += 1;
-    if (!(urlDatabase[req.params.shortURL].visitors.includes(visitorID))) {
+    if (!(urlDatabase[req.params.shortURL].visitors.includes(visitorID)) && !(urlDatabase[req.params.shortURL].userVisitors.includes(req.session.userID))) {
       urlDatabase[req.params.shortURL].uniquePageViews += 1;
     }
     urlDatabase[req.params.shortURL].timestamps.push(date);
-    urlDatabase[req.params.shortURL].visitors.push(visitorID);
-    console.log(urlDatabase);
-    console.log(req.cookies);
+    if (req.cookies.visitorID) {
+      urlDatabase[req.params.shortURL].visitors.push(req.cookies.visitorID);
+    } else {
+      urlDatabase[req.params.shortURL].visitors.push(generateRandomID());
+    }
+    if (req.session.userID && !(urlDatabase[req.params.shortURL].userVisitors.includes(req.session.userID))) {
+      urlDatabase[req.params.shortURL].userVisitors.push(req.session.userID);
+    }
     const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
   }
@@ -141,7 +146,7 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL].uniquePageViews = 0;
   urlDatabase[shortURL].timestamps = [];
   urlDatabase[shortURL].visitors = [];
-  console.log(urlDatabase[shortURL]);
+  urlDatabase[shortURL].userVisitors = [];
   res.redirect(`./urls/${shortURL}`);
 });
 
@@ -184,8 +189,8 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req,res) => {
-  res.clearCookie('visitorID');
   req.session = null;
+  res.clearCookie('visitorID');
   res.redirect("/urls");
 });
 
