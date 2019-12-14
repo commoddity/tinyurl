@@ -22,6 +22,9 @@
         <tr>
           <th scope="col">Short URL</th>
           <th scope="col">Long URL</th>
+          <th scope="col">Date Created</th>
+          <th scope="col">Page Views</th>
+          <th scope="col">Unique Page Views</th>
           <th scope="col">Edit</th>
           <th scope="col">Delete</th>
         </tr>
@@ -30,7 +33,10 @@
         <% for(let url in urls) { %>
           <tr>
             <td><a href="/urls/<%= url %>"><%= url %></a></td>
-            <td><a href="<%= urls[url] %>"><%= urls[url].longURL %></a></td>
+            <td><a href="/u/<%= url %>"><%= urls[url].longURL %></a></td>
+            <td><%= urls[url].dateCreated %></a></td>
+            <td><%= urls[url].pageViews %></a></td>
+            <td><%= urls[url].uniquePageViews %></a></td>
             <form action="/urls/<%= url %>/">
               <td><button type="submit" class="btn btn-success">EDIT</button></td>
             </form>

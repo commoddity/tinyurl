@@ -139,9 +139,11 @@ app.get("/u/:shortURL", (req, res) => {
 // POST REQUESTS
 app.post("/urls", (req, res) => {
   const shortURL = generateShortURL();
+  const dateCreated = generateTimestamp();
   urlDatabase[shortURL] = {};
   urlDatabase[shortURL].longURL = req.body.longURL;
   urlDatabase[shortURL].userID = req.session.userID;
+  urlDatabase[shortURL].dateCreated = dateCreated;
   urlDatabase[shortURL].pageViews = 0;
   urlDatabase[shortURL].uniquePageViews = 0;
   urlDatabase[shortURL].timestamps = [];
